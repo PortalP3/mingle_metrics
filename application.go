@@ -1,11 +1,20 @@
 package main
 
 import (
-	"fmt"
+	"errors"
+	"log"
 	"os"
 
 	"github.com/urfave/cli"
 )
+
+func getMingleCFD() (cfd string, err error) {
+	return "", errors.New("Not Implemented")
+}
+
+func updateSpreadsheetCFD(cfd string) (err error) {
+	return errors.New("Not Implemented")
+}
 
 func main() {
 
@@ -18,7 +27,14 @@ func main() {
 			Name:  "cfd",
 			Usage: "Get cfd info from mingle",
 			Action: func(c *cli.Context) error {
-				fmt.Println("not implemented!")
+				cfd, err := getMingleCFD()
+				if err != nil {
+					log.Fatal(err)
+				}
+				err = updateSpreadsheetCFD(cfd)
+				if err != nil {
+					log.Fatal(err)
+				}
 				return nil
 			},
 		},

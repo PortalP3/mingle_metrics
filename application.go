@@ -105,7 +105,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "Mingle api client"
 	app.Usage = "Get project data from mingle"
-	app.Version = "0.0.1"
+	app.Version = "0.0.2"
 	app.Commands = []cli.Command{
 		{
 			Name:  "cfd",

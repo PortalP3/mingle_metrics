@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"net/url"
 	"os"
 	"os/user"
@@ -20,13 +19,11 @@ import (
 )
 
 type SystemConfiguration struct {
-	MingleLogin          string
-	MingleSecretAcessKey string
-	MingleAPIEndpoint    string
-	MingleProjectId      string
+	Login     string
+	Secret    string
+	Endpoint  string
+	ProjectID string
 }
-
-var defaultClient = &http.Client{}
 
 func configFile() (string, error) {
 	usr, err := user.Current()
@@ -56,10 +53,12 @@ func saveConfigFile(file string, config SystemConfiguration) {
 
 func readConfigFile(file string) (SystemConfiguration, error) {
 	f, err := os.Open(file)
-	if err != nil {
-		return SystemConfiguration{}, err
-	}
 	var config SystemConfiguration
+	if os.IsNotExist(err) {
+		return config, nil
+	} else {
+		return config, err
+	}
 	err = json.NewDecoder(f).Decode(&config)
 	defer f.Close()
 	return config, err
@@ -71,16 +70,16 @@ func setConfig(key string, value string) {
 		log.Fatal(err)
 	}
 	switch key {
-	case "endpoint":
-		saveConfigFile(file, SystemConfiguration{MingleAPIEndpoint: value})
-	case "login":
-		saveConfigFile(file, SystemConfiguration{MingleLogin: value})
-	case "secret":
-		saveConfigFile(file, SystemConfiguration{MingleSecretAcessKey: value})
-	case "project":
-		saveConfigFile(file, SystemConfiguration{MingleProjectId: value})
+	case "Endpoint":
+		saveConfigFile(file, SystemConfiguration{Endpoint: value})
+	case "Login":
+		saveConfigFile(file, SystemConfiguration{Login: value})
+	case "Secret":
+		saveConfigFile(file, SystemConfiguration{Secret: value})
+	case "ProjectID":
+		saveConfigFile(file, SystemConfiguration{ProjectID: value})
 	default:
-		fmt.Printf("Unknow configuration")
+		fmt.Println("Unknow configuration")
 	}
 }
 
@@ -115,7 +114,7 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "Mingle api client"
-	app.Usage = "Get project data from mingle"
+	app.Usage = "Get your project data from mingle"
 	app.Version = "0.0.2"
 	app.Commands = []cli.Command{
 		{
@@ -135,14 +134,22 @@ func main() {
 		},
 		{
 			Name:  "config",
-			Usage: "Config the application",
+			Usage: "Helps you set configuration values",
+			Description: "This application needs your user data to access your mingle server." +
+				" To do so, you need to set your security and instance attributes. Currently we need you to set:\n\n" +
+				"\t\t\tLogin - This is your login name at mingle. 'access_key_id' at your .csv file downloaded from " +
+				"HMAC Auth Key tab on your profile.\n\n" +
+				"\t\t\tSecret - This is the secret key. 'secret_access_key' at your .csv file downloaded from " +
+				"HMAC Auth Key tab on your profile.\n\n" +
+				"\t\t\tEndpoint - Url of your mingle instance. Usually in the form \"https://instance_name.company_name.com\"\n\n" +
+				"\t\t\tProjectID - The project identifier that you gave when you created your project. You can find " +
+				"this information at Project admin -> Project Settings -> Basic information.",
+			ArgsUsage: "Login your_value_here",
 			Action: func(c *cli.Context) error {
-				firstArg := c.Args().Get(0)
-				if firstArg == "set" {
-					setConfig(c.Args().Get(1), c.Args().Get(2))
+				if len(c.Args()) < 2 {
 					printCurrentConfig()
 				} else {
-					printCurrentConfig()
+					setConfig(c.Args().Get(1), c.Args().Get(2))
 				}
 				return nil
 			},

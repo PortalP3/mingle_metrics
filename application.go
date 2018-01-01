@@ -42,7 +42,7 @@ func saveConfigFile(file string, config SystemConfiguration) {
 		log.Fatal(err)
 	}
 	mergo.MergeWithOverwrite(&originalConfig, config)
-	fmt.Printf("Saving config file to: %s\n", file)
+	fmt.Printf("Saving to config file at %s\n", file)
 	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		log.Fatalf("Unable to open file: %v", err)
@@ -51,17 +51,17 @@ func saveConfigFile(file string, config SystemConfiguration) {
 	json.NewEncoder(f).Encode(originalConfig)
 }
 
-func readConfigFile(file string) (SystemConfiguration, error) {
+func readConfigFile(file string) (config SystemConfiguration, err error) {
 	f, err := os.Open(file)
-	var config SystemConfiguration
+	defer f.Close()
+
 	if os.IsNotExist(err) {
 		return config, nil
-	} else {
-		return config, err
 	}
-	err = json.NewDecoder(f).Decode(&config)
-	defer f.Close()
-	return config, err
+	if err == nil {
+		err = json.NewDecoder(f).Decode(&config)
+	}
+	return
 }
 
 func setConfig(key string, value string) {
@@ -93,7 +93,8 @@ func printCurrentConfig() {
 		log.Fatal(err)
 	}
 	numberOfElements := reflect.TypeOf(&currentConfig).Elem().NumField()
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.TabIndent)
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+	fmt.Println("Current configuration:\n")
 	for i := 0; i < numberOfElements; i++ {
 		f := reflect.TypeOf(&currentConfig).Elem().FieldByIndex([]int{i})
 		v := reflect.Indirect(reflect.ValueOf(&currentConfig)).FieldByName(f.Name)
@@ -149,7 +150,8 @@ func main() {
 				if len(c.Args()) < 2 {
 					printCurrentConfig()
 				} else {
-					setConfig(c.Args().Get(1), c.Args().Get(2))
+					setConfig(c.Args().Get(0), c.Args().Get(1))
+					printCurrentConfig()
 				}
 				return nil
 			},

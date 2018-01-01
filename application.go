@@ -11,6 +11,10 @@ import (
 	"os/user"
 	"path/filepath"
 
+	"reflect"
+
+	"text/tabwriter"
+
 	"github.com/imdario/mergo"
 	"github.com/urfave/cli"
 )
@@ -89,7 +93,14 @@ func printCurrentConfig() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Current configuration: %+v", currentConfig)
+	numberOfElements := reflect.TypeOf(&currentConfig).Elem().NumField()
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.TabIndent)
+	for i := 0; i < numberOfElements; i++ {
+		f := reflect.TypeOf(&currentConfig).Elem().FieldByIndex([]int{i})
+		v := reflect.Indirect(reflect.ValueOf(&currentConfig)).FieldByName(f.Name)
+		fmt.Fprintf(w, "%v:\t%v\n", f.Name, v)
+	}
+	w.Flush()
 }
 
 func getMingleCFD() (cfd string, err error) {
@@ -131,7 +142,7 @@ func main() {
 					setConfig(c.Args().Get(1), c.Args().Get(2))
 					printCurrentConfig()
 				} else {
-					fmt.Println("Unknow action")
+					printCurrentConfig()
 				}
 				return nil
 			},

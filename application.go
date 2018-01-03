@@ -2,19 +2,27 @@ package main
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"reflect"
 
 	"text/tabwriter"
 
+	"io/ioutil"
+
+	"bytes"
+
 	"github.com/imdario/mergo"
+	"github.com/pd/apiauth"
 	"github.com/urfave/cli"
 )
 
@@ -103,8 +111,72 @@ func printCurrentConfig() {
 	w.Flush()
 }
 
+type Property struct {
+	Name  string `xml:"name"`
+	Value string `xml:"value"`
+}
+
+func (p Property) String() string {
+	return p.Value
+}
+
+type Card struct {
+	Name       string     `xml:"name"`
+	Type       string     `xml:"card_type>name"`
+	Number     int        `xml:"number"`
+	Properties []Property `xml:"properties>property"`
+}
+
+type CardsResource struct {
+	Cards []Card `xml:"card"`
+}
+
 func getMingleCFD() (cfd string, err error) {
-	return "", errors.New("Not Implemented")
+	file, _ := configFile()
+	config, _ := readConfigFile(file)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%v/api/v2/projects/%v/cards.xml", config.Endpoint, config.ProjectID), nil)
+	req.Header.Set("Date", apiauth.Date())
+	err = apiauth.Sign(req, config.Login, config.Secret)
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := http.DefaultClient
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var resource CardsResource
+	err = xml.Unmarshal(body, &resource)
+	if err != nil {
+		log.Fatal(err)
+	}
+	cfd = printCSV(resource.Cards)
+	return
+}
+
+func printCSV(cards []Card) (cfd string) {
+	var buffer bytes.Buffer
+	buffer.WriteString("Number;Name;Type;Status;Moved to Backlog on;Moved to In Analysis on;Moved to Ready for Dev on;Moved to In Dev on;Moved to Ready for Prod on;Moved to Done on\n")
+	for i := range cards {
+		card := cards[i]
+		buffer.WriteString(fmt.Sprintf("%v;%v;%v", card.Number, card.Name, card.Type))
+		for i := range card.Properties {
+			if card.Properties[i].Name == "Status" {
+				buffer.WriteString(fmt.Sprintf(";%v", strings.Trim(card.Properties[i].Value, " ")))
+			}
+		}
+		for i := range card.Properties {
+			if strings.HasPrefix(card.Properties[i].Name, "Moved to") {
+				buffer.WriteString(fmt.Sprintf(";%v", strings.Trim(card.Properties[i].Value, " ")))
+			}
+		}
+		buffer.WriteString(fmt.Sprint("\n"))
+	}
+	return buffer.String()
 }
 
 func updateSpreadsheetCFD(cfd string) (err error) {
@@ -126,10 +198,7 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
-				err = updateSpreadsheetCFD(cfd)
-				if err != nil {
-					log.Fatal(err)
-				}
+				fmt.Println(cfd)
 				return nil
 			},
 		},

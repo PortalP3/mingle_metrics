@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -179,16 +178,12 @@ func printCSV(cards []Card) (cfd string) {
 	return buffer.String()
 }
 
-func updateSpreadsheetCFD(cfd string) (err error) {
-	return errors.New("Not Implemented")
-}
-
 func main() {
 
 	app := cli.NewApp()
 	app.Name = "Mingle api client"
 	app.Usage = "Get your project data from mingle"
-	app.Version = "0.0.3"
+	app.Version = "0.0.4"
 	app.Commands = []cli.Command{
 		{
 			Name:  "cfd",

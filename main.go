@@ -26,13 +26,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-type SystemConfiguration struct {
-	Login     string
-	Secret    string
-	Endpoint  string
-	ProjectID string
-}
-
 func configFile() (string, error) {
 	usr, err := user.Current()
 	if err != nil {
@@ -44,7 +37,7 @@ func configFile() (string, error) {
 		url.QueryEscape("config.json")), nil
 }
 
-func saveConfigFile(file string, newConfig SystemConfiguration) {
+func saveConfigFile(file string, newConfig config.SystemConfiguration) {
 	originalConfig, err := config.Load(file)
 	if err != nil {
 		log.Fatal(err)
@@ -66,13 +59,13 @@ func setConfig(key string, value string) {
 	}
 	switch key {
 	case "Endpoint":
-		saveConfigFile(file, SystemConfiguration{Endpoint: value})
+		saveConfigFile(file, config.SystemConfiguration{Endpoint: value})
 	case "Login":
-		saveConfigFile(file, SystemConfiguration{Login: value})
+		saveConfigFile(file, config.SystemConfiguration{Login: value})
 	case "Secret":
-		saveConfigFile(file, SystemConfiguration{Secret: value})
+		saveConfigFile(file, config.SystemConfiguration{Secret: value})
 	case "ProjectID":
-		saveConfigFile(file, SystemConfiguration{ProjectID: value})
+		saveConfigFile(file, config.SystemConfiguration{ProjectID: value})
 	default:
 		fmt.Println("Unknow configuration")
 	}
@@ -119,11 +112,28 @@ type CardsResource struct {
 }
 
 func getMingleCFD() (cfd string, err error) {
+	const MAX_PAGE_SIZE = 25
 	file, _ := configFile()
 	currentConfig, _ := config.Load(file)
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%v/api/v2/projects/%v/cards.xml", currentConfig.Endpoint, currentConfig.ProjectID), nil)
+	page := 1
+	log.Printf("Query page %v", page)
+	var resource CardsResource
+	DoRequest(currentConfig, page, &resource)
+	var lastCardNumber int
+	for len(resource.Cards) == MAX_PAGE_SIZE && lastCardNumber < resource.Cards[len(resource.Cards)-1].Number {
+		page++
+		lastCardNumber = resource.Cards[len(resource.Cards)-1].Number
+		log.Printf("Query page %v", page)
+		DoRequest(currentConfig, page, &resource)
+	}
+	cfd = printCSV(resource.Cards)
+	return
+}
+
+func DoRequest(currentConfig config.SystemConfiguration, page int, lastPage *CardsResource) {
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%v/api/v2/projects/%v/cards.xml?page=%v&sort=number&order=ASC", currentConfig.Endpoint, currentConfig.ProjectID, page), nil)
 	req.Header.Set("Date", apiauth.Date())
-	err = apiauth.Sign(req, currentConfig.Login, currentConfig.Secret)
+	err := apiauth.Sign(req, currentConfig.Login, currentConfig.Secret)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -136,13 +146,10 @@ func getMingleCFD() (cfd string, err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	var resource CardsResource
-	err = xml.Unmarshal(body, &resource)
+	err = xml.Unmarshal(body, lastPage)
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfd = printCSV(resource.Cards)
-	return
 }
 
 func printCSV(cards []Card) (cfd string) {

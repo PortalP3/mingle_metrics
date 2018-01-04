@@ -6,3 +6,33 @@ builds:
       - linux
     goarch:
       - amd64
+
+project_name: mingle_metrics
+
+brew:
+  # Reporitory to push the tap to.
+  github:
+    owner: PortalP3
+    name: homebrew-mingle_metrics
+
+  # Git author used to commit to the repository.
+  # Defaults are shown.
+  commit_author:
+    name: Alfredo Segundo
+    email: asegundo@thoughtworks.com
+
+  # Folder inside the repository to put the formula.
+  # Default is the root folder.
+  folder: Formula
+
+  description: "Mingle metrics - client for mingle api"
+
+  # So you can `brew test` your formula.
+  # Default is empty.
+  test: |
+    system "#{bin}/program --version"
+
+  # Custom install script for brew.
+  # Default is 'bin.install "program"'.
+  install: |
+    bin.install "program"

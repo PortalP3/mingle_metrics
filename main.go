@@ -26,15 +26,14 @@ import (
 	"github.com/urfave/cli"
 )
 
-func configFile() (string, error) {
+func configFile() string {
 	usr, err := user.Current()
 	if err != nil {
-		return "", err
+		log.Fatalf("Unable to find current user configuration: %v", err)
 	}
 	configDir := filepath.Join(usr.HomeDir, ".mingle_metrics")
 	os.MkdirAll(configDir, 0700)
-	return filepath.Join(configDir,
-		url.QueryEscape("config.json")), nil
+	return filepath.Join(configDir, url.QueryEscape("config.json"))
 }
 
 func saveConfigFile(file string, newConfig config.SystemConfiguration) {
@@ -113,8 +112,10 @@ type CardsResource struct {
 
 func getMingleCFD() (cfd string, err error) {
 	const MAX_PAGE_SIZE = 25
-	file, _ := configFile()
-	currentConfig, _ := config.Load(file)
+	currentConfig, err := config.Load(configFile())
+	if err != nil {
+		return "", err
+	}
 	page := 1
 	var resource CardsResource
 	DoRequest(currentConfig, page, &resource)

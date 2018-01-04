@@ -178,12 +178,14 @@ func printCSV(cards []Card) (cfd string) {
 	return buffer.String()
 }
 
+var version = "master"
+
 func main() {
 
 	app := cli.NewApp()
 	app.Name = "Mingle api client"
 	app.Usage = "Get your project data from mingle"
-	app.Version = "0.0.5"
+	app.Version = version
 	app.Commands = []cli.Command{
 		{
 			Name:  "cfd",

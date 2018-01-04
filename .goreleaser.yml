@@ -16,7 +16,6 @@ brew:
     name: homebrew-mingle_metrics
 
   # Git author used to commit to the repository.
-  # Defaults are shown.
   commit_author:
     name: Alfredo Segundo
     email: asegundo@thoughtworks.com
@@ -30,9 +29,9 @@ brew:
   # So you can `brew test` your formula.
   # Default is empty.
   test: |
-    system "#{bin}/program --version"
+    system "#{bin}/mingle_metrics -v"
 
   # Custom install script for brew.
   # Default is 'bin.install "program"'.
   install: |
-    bin.install "program"
+    bin.install "mingle_metrics"

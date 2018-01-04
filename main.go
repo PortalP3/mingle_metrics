@@ -20,6 +20,7 @@ import (
 
 	"bytes"
 
+	"github.com/PortalP3/mingle_metrics/config"
 	"github.com/imdario/mergo"
 	"github.com/pd/apiauth"
 	"github.com/urfave/cli"
@@ -43,12 +44,12 @@ func configFile() (string, error) {
 		url.QueryEscape("config.json")), nil
 }
 
-func saveConfigFile(file string, config SystemConfiguration) {
-	originalConfig, err := readConfigFile(file)
+func saveConfigFile(file string, newConfig SystemConfiguration) {
+	originalConfig, err := config.Load(file)
 	if err != nil {
 		log.Fatal(err)
 	}
-	mergo.MergeWithOverwrite(&originalConfig, config)
+	mergo.MergeWithOverwrite(&originalConfig, newConfig)
 	fmt.Printf("Saving to config file at %s\n", file)
 	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
@@ -56,19 +57,6 @@ func saveConfigFile(file string, config SystemConfiguration) {
 	}
 	defer f.Close()
 	json.NewEncoder(f).Encode(originalConfig)
-}
-
-func readConfigFile(file string) (config SystemConfiguration, err error) {
-	f, err := os.Open(file)
-	defer f.Close()
-
-	if os.IsNotExist(err) {
-		return config, nil
-	}
-	if err == nil {
-		err = json.NewDecoder(f).Decode(&config)
-	}
-	return
 }
 
 func setConfig(key string, value string) {
@@ -95,13 +83,13 @@ func printCurrentConfig() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	currentConfig, err := readConfigFile(file)
+	currentConfig, err := config.Load(file)
 	if err != nil {
 		log.Fatal(err)
 	}
 	numberOfElements := reflect.TypeOf(&currentConfig).Elem().NumField()
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
-	fmt.Println("Current configuration:\n")
+	fmt.Println("Current configuration:")
 	for i := 0; i < numberOfElements; i++ {
 		f := reflect.TypeOf(&currentConfig).Elem().FieldByIndex([]int{i})
 		v := reflect.Indirect(reflect.ValueOf(&currentConfig)).FieldByName(f.Name)
@@ -132,10 +120,10 @@ type CardsResource struct {
 
 func getMingleCFD() (cfd string, err error) {
 	file, _ := configFile()
-	config, _ := readConfigFile(file)
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%v/api/v2/projects/%v/cards.xml", config.Endpoint, config.ProjectID), nil)
+	currentConfig, _ := config.Load(file)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%v/api/v2/projects/%v/cards.xml", currentConfig.Endpoint, currentConfig.ProjectID), nil)
 	req.Header.Set("Date", apiauth.Date())
-	err = apiauth.Sign(req, config.Login, config.Secret)
+	err = apiauth.Sign(req, currentConfig.Login, currentConfig.Secret)
 	if err != nil {
 		log.Fatal(err)
 	}

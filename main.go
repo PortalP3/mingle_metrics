@@ -38,6 +38,10 @@ func configFile() string {
 
 func saveConfigFile(file string, newConfig config.SystemConfiguration) {
 	originalConfig, err := config.Load(file)
+	if os.IsNotExist(err) {
+		originalConfig = config.SystemConfiguration{}
+		err = nil
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,6 +73,10 @@ func setConfig(key string, value string) {
 
 func printCurrentConfig() {
 	currentConfig, err := config.Load(configFile())
+	if os.IsNotExist(err) {
+		currentConfig = config.SystemConfiguration{}
+		err = nil
+	}
 	if err != nil {
 		log.Fatal(err)
 	}

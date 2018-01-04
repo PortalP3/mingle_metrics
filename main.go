@@ -52,10 +52,7 @@ func saveConfigFile(file string, newConfig config.SystemConfiguration) {
 }
 
 func setConfig(key string, value string) {
-	file, err := configFile()
-	if err != nil {
-		log.Fatal(err)
-	}
+	file := configFile()
 	switch key {
 	case "Endpoint":
 		saveConfigFile(file, config.SystemConfiguration{Endpoint: value})
@@ -71,11 +68,7 @@ func setConfig(key string, value string) {
 }
 
 func printCurrentConfig() {
-	file, err := configFile()
-	if err != nil {
-		log.Fatal(err)
-	}
-	currentConfig, err := config.Load(file)
+	currentConfig, err := config.Load(configFile())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -125,8 +118,7 @@ func getMingleCFD() (cfd string, err error) {
 		lastCardNumber = resource.Cards[len(resource.Cards)-1].Number
 		DoRequest(currentConfig, page, &resource)
 	}
-	cfd = printCSV(resource.Cards)
-	return
+	return printCSV(resource.Cards), nil
 }
 
 func DoRequest(currentConfig config.SystemConfiguration, page int, lastPage *CardsResource) {

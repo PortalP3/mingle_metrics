@@ -14,3 +14,4 @@
 .glide/
 mingle_metrics
 .idea
+dist/

@@ -104,7 +104,6 @@ type CardsResource struct {
 }
 
 func getMingleCFD() (cfd string, err error) {
-	const MAX_PAGE_SIZE = 25
 	currentConfig, err := config.Load(configFile())
 	if err != nil {
 		return "", err
@@ -113,6 +112,7 @@ func getMingleCFD() (cfd string, err error) {
 	var resource CardsResource
 	DoRequest(currentConfig, page, &resource)
 	var lastCardNumber int
+	const MAX_PAGE_SIZE = 25
 	for len(resource.Cards) == MAX_PAGE_SIZE && lastCardNumber < resource.Cards[len(resource.Cards)-1].Number {
 		page++
 		lastCardNumber = resource.Cards[len(resource.Cards)-1].Number

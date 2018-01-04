@@ -116,14 +116,12 @@ func getMingleCFD() (cfd string, err error) {
 	file, _ := configFile()
 	currentConfig, _ := config.Load(file)
 	page := 1
-	log.Printf("Query page %v", page)
 	var resource CardsResource
 	DoRequest(currentConfig, page, &resource)
 	var lastCardNumber int
 	for len(resource.Cards) == MAX_PAGE_SIZE && lastCardNumber < resource.Cards[len(resource.Cards)-1].Number {
 		page++
 		lastCardNumber = resource.Cards[len(resource.Cards)-1].Number
-		log.Printf("Query page %v", page)
 		DoRequest(currentConfig, page, &resource)
 	}
 	cfd = printCSV(resource.Cards)

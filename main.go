@@ -55,8 +55,7 @@ func saveConfigFile(file string, newConfig config.SystemConfiguration) {
 	json.NewEncoder(f).Encode(originalConfig)
 }
 
-func setConfig(key string, value string) {
-	file := configFile()
+func setConfig(key string, value string, file string) {
 	switch key {
 	case "Endpoint":
 		saveConfigFile(file, config.SystemConfiguration{Endpoint: value})
@@ -71,15 +70,7 @@ func setConfig(key string, value string) {
 	}
 }
 
-func printCurrentConfig() {
-	currentConfig, err := config.Load(configFile())
-	if os.IsNotExist(err) {
-		currentConfig = config.SystemConfiguration{}
-		err = nil
-	}
-	if err != nil {
-		log.Fatal(err)
-	}
+func printCurrentConfig(currentConfig config.SystemConfiguration) {
 	numberOfElements := reflect.TypeOf(&currentConfig).Elem().NumField()
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
 	fmt.Println("Current configuration:")
@@ -207,11 +198,20 @@ func main() {
 				"this information at Project admin -> Project Settings -> Basic information.",
 			ArgsUsage: "Login your_value_here",
 			Action: func(c *cli.Context) error {
+				file := configFile()
+				currentConfig, err := config.Load(file)
+				if os.IsNotExist(err) {
+					printCurrentConfig(config.SystemConfiguration{})
+				}
+				if err != nil {
+					log.Fatal(err)
+				}
 				if len(c.Args()) < 2 {
-					printCurrentConfig()
+					printCurrentConfig(currentConfig)
 				} else {
-					setConfig(c.Args().Get(0), c.Args().Get(1))
-					printCurrentConfig()
+					setConfig(c.Args().Get(0), c.Args().Get(1), file)
+					currentConfig, _ := config.Load(file)
+					printCurrentConfig(currentConfig)
 				}
 				return nil
 			},

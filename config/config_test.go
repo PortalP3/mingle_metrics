@@ -20,6 +20,8 @@ var validJson = `
 }
 `
 
+var invalidJson = `{{`
+
 func TestFileNotFound(t *testing.T) {
 	_, err := Load("testdata/invalid_config.json")
 	assert.True(t, os.IsNotExist(err), "")
@@ -30,8 +32,17 @@ func TestJsonParsingConfig(t *testing.T) {
 	f.WriteString(validJson)
 	assert.NoError(t, err)
 	actual, err := Load(filepath.Join(f.Name()))
+	assert.NoError(t, err)
 	assert.Equal(t, "my_login", actual.Login)
 	assert.Equal(t, "my_id", actual.ProjectID)
 	assert.Equal(t, "my_secret", actual.Secret)
 	assert.Equal(t, "my_endpoint", actual.Endpoint)
+}
+
+func TestJsonParsingInvalidConfig(t *testing.T) {
+	f, err := ioutil.TempFile(os.TempDir(), "config")
+	f.WriteString(invalidJson)
+	assert.NoError(t, err)
+	_, err = Load(filepath.Join(f.Name()))
+	assert.Error(t, err, "")
 }

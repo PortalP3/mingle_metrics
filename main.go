@@ -24,6 +24,7 @@ import (
 	"github.com/imdario/mergo"
 	"github.com/pd/apiauth"
 	"github.com/urfave/cli"
+	"math"
 )
 
 func configFile() string {
@@ -112,7 +113,7 @@ func getMingleCFD() (cfd string, err error) {
 	DoRequest(currentConfig, page, &resource)
 	var lastCardNumber int
 	const MAX_PAGE_SIZE = 25
-	for len(resource.Cards) == MAX_PAGE_SIZE && lastCardNumber < resource.Cards[len(resource.Cards)-1].Number {
+	for math.Mod(float64(len(resource.Cards)), MAX_PAGE_SIZE) == 0 && lastCardNumber < resource.Cards[len(resource.Cards)-1].Number {
 		page++
 		lastCardNumber = resource.Cards[len(resource.Cards)-1].Number
 		DoRequest(currentConfig, page, &resource)

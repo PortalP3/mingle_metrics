@@ -145,7 +145,7 @@ func DoRequest(currentConfig config.SystemConfiguration, page int, lastPage *Car
 
 func printCSV(cards []Card) (cfd string) {
 	var buffer bytes.Buffer
-	buffer.WriteString("Number;Name;Type;Status;Moved to Backlog on;Moved to In Analysis on;Moved to Ready for Dev on;Moved to In Dev on;Moved to Ready for Prod on;Moved to Done on\n")
+	buffer.WriteString("Number;Name;Type;Status;Moved to Backlog on;Moved to In Analysis on;Moved to Ready for Dev on;Moved to In Dev on;Moved to Done on\n")
 	for i := range cards {
 		card := cards[i]
 		buffer.WriteString(fmt.Sprintf("%v;%v;%v", card.Number, card.Name, card.Type))
@@ -155,7 +155,27 @@ func printCSV(cards []Card) (cfd string) {
 			}
 		}
 		for i := range card.Properties {
-			if strings.HasPrefix(card.Properties[i].Name, "Moved to") {
+			if strings.HasPrefix(card.Properties[i].Name, "Moved to Backlog on") {
+				buffer.WriteString(fmt.Sprintf(";%v", strings.Trim(card.Properties[i].Value, " ")))
+			}
+		}
+		for i := range card.Properties {
+			if strings.HasPrefix(card.Properties[i].Name, "Moved to In Analysis on") {
+				buffer.WriteString(fmt.Sprintf(";%v", strings.Trim(card.Properties[i].Value, " ")))
+			}
+		}
+		for i := range card.Properties {
+			if strings.HasPrefix(card.Properties[i].Name, "Moved to Ready for Dev on") {
+				buffer.WriteString(fmt.Sprintf(";%v", strings.Trim(card.Properties[i].Value, " ")))
+			}
+		}
+		for i := range card.Properties {
+			if strings.HasPrefix(card.Properties[i].Name, "Moved to In Dev on") {
+				buffer.WriteString(fmt.Sprintf(";%v", strings.Trim(card.Properties[i].Value, " ")))
+			}
+		}
+		for i := range card.Properties {
+			if strings.HasPrefix(card.Properties[i].Name, "Moved to Done on") {
 				buffer.WriteString(fmt.Sprintf(";%v", strings.Trim(card.Properties[i].Value, " ")))
 			}
 		}
